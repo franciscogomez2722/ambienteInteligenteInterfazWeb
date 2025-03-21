@@ -1,0 +1,42 @@
+/* Barra de navegación */
+.navbar {
+    background: #007bff; /* Azul sólido */
+    padding: 20px 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: right;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Contenedor de enlaces */
+  .nav-container {
+    display: flex;
+    gap: 40px; /* Espaciado entre los enlaces */
+  }
+  
+  /* Enlaces de navegación */
+  .nav-link {
+    color: white;
+    text-decoration: none;
+    font-size: 20px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: 0.3s ease-in-out;
+  }
+  
+  /* Efecto hover */
+  .nav-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: black;
+  }
+  
+  /* Página activa */
+  .nav-link.active {
+    background: white;
+    color: #007bff;
+    font-weight: bold;
+  }
+  
