@@ -3,7 +3,7 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
 const DataDisplay = () => {
-  const [value, setValue] = useState("Esperando datos..."); // Estado para almacenar el valor recibido
+  const [value, setValue] = useState("Esperando un ticket..."); // Estado para almacenar el valor recibido
 
   useEffect(() => {
     const socket = new SockJS("http://localhost:8080/ws"); // Usa SockJS
@@ -49,7 +49,8 @@ const DataDisplay = () => {
 
   return (
     <div>
-      <h1>Valor recibido: {value}</h1>
+      
+      <h1>&nbsp;&nbsp;&nbsp;Tarea asignada: {value}</h1>
     </div>
   );
 };

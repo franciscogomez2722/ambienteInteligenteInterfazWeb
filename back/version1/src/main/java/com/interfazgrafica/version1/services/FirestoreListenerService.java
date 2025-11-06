@@ -85,7 +85,7 @@ public class FirestoreListenerService {
                     System.out.println("-----------------------------");
 
                     // Envía los datos al frontend a través de WebSocket
-                    messagingTemplate.convertAndSend("/topic/personlocation", dc.getDocument().getData());
+                    messagingTemplate.convertAndSend("/topic/v", dc.getDocument().getData());
 
                     System.out.println("Datos de ubicación enviados");
                 }

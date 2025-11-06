@@ -13,6 +13,11 @@ public class WebSocketController {
         return data; // Envía los datos a los clientes
     }
 
+    @SendTo("/topic/respuesta") // Ruta para enviar mensajes a los clientes
+    public String sendrespuesta(String data) {
+        return data; // Envía los datos a los clientes
+    }
+
     // Nueva ruta para recibir mensajes de "personlocation"
     @MessageMapping("/personlocation")
     @SendTo("/topic/personlocation") // Envía mensajes a los clientes suscritos a "/topic/personlocation"
