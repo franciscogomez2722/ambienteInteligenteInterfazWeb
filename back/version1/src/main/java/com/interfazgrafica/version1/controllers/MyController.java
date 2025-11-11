@@ -24,7 +24,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api2")
 public class MyController {
 
     @Autowired
@@ -62,6 +62,7 @@ public class MyController {
 
     /**
      * Endpoint de prueba que arma un objeto con nombre, email y edad y lo guarda en Firebase.
+     * http://100.112.146.0:8080/api2/test-save/Francisco?email=francisco@example.com&age=30
      */
     @GetMapping("/test-save/{name}")
     public String testSaveData(
@@ -83,7 +84,7 @@ public class MyController {
 
     //Funcion para enviar datos a el midleware :D
     public void enviarMensajeAlNodo() {
-        String ipNodo = "192.168.1.177"; 
+        String ipNodo = "100.112.146.0"; 
         int puerto = 4567;
         try (Socket socket = new Socket(ipNodo, puerto);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
@@ -106,6 +107,8 @@ public class MyController {
 
     /**
      * Endpoint simple que recibe un parámetro llamado 'valor' y lo imprime en consola.
+     * http://192.168.1.192:8080/api/ruido?valor=123
+     * 
      */
     @GetMapping("/ruido")
     public String recibirRuido(@RequestParam String valor) {

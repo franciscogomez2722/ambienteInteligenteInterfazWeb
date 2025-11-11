@@ -68,33 +68,36 @@ public class FirestoreListenerService {
     }
 
     private void listenForLocationPersonChanges(Firestore db) {
-        CollectionReference locationPersonCollection = db.collection("locationofperson");
+        System.out.println("----------->Listener de locationPerson (documento específico) iniciado...");
 
-        locationPersonCollection.addSnapshotListener((snapshots, e) -> {
+        String documentId = "9Vlhg3mReBAgkxdBtRBc"; // ID fijo del documento
+        DocumentReference docRef = db.collection("locationofperson").document(documentId);
+
+        docRef.addSnapshotListener((snapshot, e) -> {
             if (e != null) {
                 System.err.println("Error al escuchar cambios en 'locationPerson': " + e.getMessage());
                 return;
             }
 
-            for (DocumentChange dc : snapshots.getDocumentChanges()) {
-                if (dc.getType() == DocumentChange.Type.ADDED) {
-                    // Imprime los datos del nuevo documento en la consola
-                    System.out.println("Nueva ubicación agregada:");
-                    System.out.println("ID: " + dc.getDocument().getId());
-                    System.out.println("Datos: " + dc.getDocument().getData());
-                    System.out.println("-----------------------------");
+            if (snapshot != null && snapshot.exists()) {
+                System.out.println("Documento modificado:");
+                System.out.println("ID: " + snapshot.getId());
+                System.out.println("Datos: " + snapshot.getData());
+                System.out.println("-----------------------------");
 
-                    // Envía los datos al frontend a través de WebSocket
-                    messagingTemplate.convertAndSend("/topic/v", dc.getDocument().getData());
+                // Envía los datos al frontend a través de WebSocket
+                messagingTemplate.convertAndSend("/topic/personlocation", snapshot.getData());
 
-                    System.out.println("Datos de ubicación enviados");
-                }
+                System.out.println("Datos de ubicación enviados");
+            } else {
+                System.out.println("Documento no existe o fue eliminado");
             }
         });
     }
 
+
     private void listenForSensorChanges(Firestore db) {
-        CollectionReference sensorCollection = db.collection("sensorshouse1");
+        CollectionReference sensorCollection = db.collection("concrectServices");
 
         sensorCollection.addSnapshotListener((snapshots, e) -> {
             if (e != null) {
@@ -108,8 +111,9 @@ public class FirestoreListenerService {
             // Recorre todos los documentos en la colección "sensorhome"
             for (DocumentSnapshot document : snapshots.getDocuments()) {
                 Map<String, Object> sensorData = new HashMap<>();
-                sensorData.put("idSensor", document.get("idSensor")); // Usar el ID del documento como idSensor
-                sensorData.put("estado", document.get("estado")); // Obtener el campo "estado"
+                sensorData.put("name", document.get("name")); // Usar el ID del documento como idSensor
+                sensorData.put("state", document.get("state")); // Obtener el campo "estado"
+                sensorData.put("location", document.get("location")); // Obtener el campo "estado"
                 sensorList.add(sensorData);
             }
 

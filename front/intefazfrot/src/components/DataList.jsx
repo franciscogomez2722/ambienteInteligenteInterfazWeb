@@ -1,27 +1,38 @@
 import React, { useEffect, useState } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import axios from "axios"; // Para hacer la consulta REST inicial
 
 const DataList = () => {
   const [sensors, setSensors] = useState([]); // Estado para almacenar los sensores
 
   useEffect(() => {
-    const socket = new SockJS("http://localhost:8080/ws"); // Usa SockJS
+    // 1- Primero: Obtener la lista de sensores desde el endpoint REST
+    const fetchSensors = async () => {
+      try {
+        const response = await axios.get("http://100.112.146.0:8080/api/sensors/get-all");
+        setSensors(response.data);
+        console.log("Sensores cargados desde REST:", response.data);
+      } catch (error) {
+        console.error("Error al cargar sensores desde REST:", error);
+      }
+    };
+
+    fetchSensors();
+
+    // 2️- Segundo: Conectarse al WebSocket para recibir actualizaciones en tiempo real
+    const socket = new SockJS("http://100.112.146.0:8080/ws");
     const client = new Client({
-      webSocketFactory: () => socket, // Usa SockJS como fábrica de WebSocket
+      webSocketFactory: () => socket,
       onConnect: () => {
         console.log("Conexión establecida con el WebSocket");
-        // Suscribirse al tema "/topic/sensorhome"
         client.subscribe("/topic/sensorhome", (message) => {
-          const newSensors = JSON.parse(message.body); // Convertir el mensaje a JSON
-          console.log("Mensaje recibido:", newSensors); // Imprimir el mensaje recibido
-
-          // Validar que newSensors sea un array
-          if (Array.isArray(newSensors)) {
-            // Actualizar la lista de sensores
-            setSensors(newSensors);
+          const updatedSensors = JSON.parse(message.body);
+          if (Array.isArray(updatedSensors)) {
+            setSensors(updatedSensors);
+            console.log("Actualización en tiempo real:", updatedSensors);
           } else {
-            console.error("El mensaje recibido no es un array:", newSensors);
+            console.error("El mensaje recibido no es un array:", updatedSensors);
           }
         });
       },
@@ -31,13 +42,11 @@ const DataList = () => {
       onStompError: (error) => {
         console.error("Error en la conexión WebSocket:", error);
       },
-      reconnectDelay: 5000, // Intentar reconectar cada 5 segundos
+      reconnectDelay: 5000,
     });
 
-    // Activar el cliente
     client.activate();
 
-    // Limpiar la conexión al desmontar el componente
     return () => {
       client.deactivate();
     };
@@ -49,7 +58,7 @@ const DataList = () => {
       <ul style={{ listStyle: "none", padding: 0 }}>
         {sensors.map((sensor) => (
           <li
-            key={sensor.idSensor} // Usar idSensor como clave única
+            key={sensor.name} // o sensor.id si existe
             style={{
               marginBottom: "10px",
               padding: "10px",
@@ -58,15 +67,16 @@ const DataList = () => {
               backgroundColor: "#f9f9f9",
             }}
           >
-            <strong>idSensor:</strong> {sensor.idSensor} <br />
-            <strong>Estado:</strong>{" "}
+            <strong>Name:</strong> {sensor.name} <br />
+            <strong>Location:</strong> {sensor.location} <br />
+            <strong>State:</strong>{" "}
             <span
               style={{
-                color: sensor.estado === "activo" ? "green" : "red",
+                color: sensor.state === "active" ? "green" : "red",
                 fontWeight: "bold",
               }}
             >
-              {sensor.estado}
+              {sensor.state}
             </span>
           </li>
         ))}

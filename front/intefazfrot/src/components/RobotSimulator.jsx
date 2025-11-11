@@ -1,55 +1,64 @@
 import React, { useEffect, useState } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import axios from "axios"; // Para hacer la petición HTTP
 
 const RobotSimulator = () => {
-  const [robotPosition, setRobotPosition] = useState({ x: 0, y: 0 }); // Estado para la posición del robot
-  const [currentLocation, setCurrentLocation] = useState("Esperando datos..."); // Estado para la ubicación actual
-  const [idSensor, setidSensor] = useState("Esperando datos..."); // Estado para la ubicación actual
-
-  // Posiciones de las habitaciones
+  const [robotPosition, setRobotPosition] = useState({ x: 0, y: 0 });
+  const [currentLocation, setCurrentLocation] = useState("Esperando datos...");
+  const [idSensor, setidSensor] = useState("Esperando datos...");
+  
   const targetPositions = {
     Cocina: { x: 50, y: 60 },
-    Sala: { x: 170, y: 60 },
+    Tocador: { x: 170, y: 60 },
     Gimnasio: { x: 290, y: 60 },
     Comedor: { x: 110, y: 190 },
     Recamara: { x: 230, y: 190 },
   };
 
-  useEffect(() => {
-    const socket = new SockJS("http://localhost:8080/ws"); // Usa SockJS
-    const client = new Client({
-      webSocketFactory: () => socket, // Usa SockJS como fábrica de WebSocket
-      onConnect: () => {
-        console.log("Conexión establecida con el WebSocket");
-        // Suscribirse al tema "/topic/personlocation"
-        client.subscribe("/topic/personlocation", (message) => {
-          const newLocation = JSON.parse(message.body); // Convertir el mensaje a JSON
-          console.log("Datos recibidos:", newLocation);
+  // Función para actualizar la posición según los datos del sensor
+  const updatePositionFromData = (data) => {
+    if (data.location && targetPositions[data.location]) {
+      setRobotPosition(targetPositions[data.location]);
+      setCurrentLocation(`Ubicación : ${data.location}`);
+      setidSensor(`Id_Sensor : ${data.idSensor}`);
+    } else {
+      setCurrentLocation("Ubicación desconocida");
+    }
+  };
 
-          // Actualizar la posición del robot según la ubicación recibida
-          if (newLocation.location && targetPositions[newLocation.location]) {
-            setRobotPosition(targetPositions[newLocation.location]);
-            setCurrentLocation(`Ubicación : ${newLocation.location}`);
-            setidSensor(`Id_Sensor : ${newLocation.idSensor}`);
-          } else {
-            setCurrentLocation("Ubicación desconocida");
-          }
+  useEffect(() => {
+    // Recuperar información del documento con ID fijo al cargar la página
+    axios
+      .get("http://100.112.146.0:8080/api/get-fixed")
+      .then((res) => {
+        console.log("Datos iniciales del sensor:", res.data);
+        updatePositionFromData(res.data);
+      })
+      .catch((err) => {
+        console.error("Error al obtener sensor fijo:", err);
+      });
+
+    // Suscribirse al WebSocket para actualizaciones en tiempo real
+    const socket = new SockJS("http://100.112.146.0:8080/ws");
+    const client = new Client({
+      webSocketFactory: () => socket,
+      onConnect: () => {
+        console.log("Conexión establecida con WebSocket");
+
+        client.subscribe("/topic/personlocation", (message) => {
+          const newLocation = JSON.parse(message.body);
+          console.log("Datos recibidos en tiempo real:", newLocation);
+          updatePositionFromData(newLocation);
         });
       },
-      onDisconnect: () => {
-        console.log("Desconectado del WebSocket");
-      },
-      onStompError: (error) => {
-        console.error("Error en la conexión WebSocket:", error);
-      },
-      reconnectDelay: 5000, // Intentar reconectar cada 5 segundos
+      onDisconnect: () => console.log("Desconectado del WebSocket"),
+      onStompError: (err) => console.error("Error WebSocket:", err),
+      reconnectDelay: 5000,
     });
 
-    // Activar el cliente
     client.activate();
 
-    // Limpiar la conexión al desmontar el componente
     return () => {
       client.deactivate();
     };
@@ -70,71 +79,26 @@ const RobotSimulator = () => {
           border: "2px solid black",
         }}
       >
-        {/* Dibujar las habitaciones */}
-        <div
-          style={{
-            position: "absolute",
-            left: "20px",
-            top: "20px",
-            width: "100px",
-            height: "100px",
-            border: "2px solid black",
-          }}
-        >
-          Cocina
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            left: "140px",
-            top: "20px",
-            width: "100px",
-            height: "100px",
-            border: "2px solid black",
-          }}
-        >
-          Sala
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            left: "260px",
-            top: "20px",
-            width: "100px",
-            height: "100px",
-            border: "2px solid black",
-          }}
-        >
-          Gimnasio
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            left: "80px",
-            top: "140px",
-            width: "100px",
-            height: "100px",
-            border: "2px solid black",
-          }}
-        >
-          Comedor
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            left: "200px",
-            top: "140px",
-            width: "100px",
-            height: "100px",
-            border: "2px solid black",
-          }}
-        >
-          Recamara
-        </div>
+        {/* Dibujar habitaciones */}
+        {Object.entries(targetPositions).map(([name, pos], index) => (
+          <div
+            key={index}
+            style={{
+              position: "absolute",
+              left: `${pos.x - 30}px`,
+              top: `${pos.y - 30}px`,
+              width: "100px",
+              height: "100px",
+              border: "2px solid black",
+            }}
+          >
+            {name}
+          </div>
+        ))}
 
-        {/* Imagen del robot */}
+        {/* Robot */}
         <img
-          src="robot.png" // Asegúrate de tener una imagen llamada robot.png en la carpeta public
+          src="robot.png"
           alt="Robot"
           style={{
             position: "absolute",
@@ -142,7 +106,7 @@ const RobotSimulator = () => {
             top: `${robotPosition.y}px`,
             width: "50px",
             height: "50px",
-            transition: "left 0.5s, top 0.5s", // Animación suave
+            transition: "left 0.5s, top 0.5s",
           }}
         />
       </div>
